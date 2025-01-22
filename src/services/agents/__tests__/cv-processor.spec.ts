@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import 'openai/shims/node';
 import { processCVWithAI } from '../cv-processor';
 
@@ -7,7 +8,7 @@ jest.mock('openai', () => {
     OpenAI: jest.fn().mockImplementation(() => ({
       chat: {
         completions: {
-          create: jest.fn().mockImplementation(async ({ messages }) => {
+          create: jest.fn().mockImplementation(async ({ messages }: { messages: Array<{ role: string; content: string }> }) => {
             // Get the CV text from the messages
             const cvText = messages.find(m => m.role === 'user')?.content || '';
             

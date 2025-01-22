@@ -165,11 +165,14 @@ export async function processCVWithAI(
     throw new Error('Text is required');
   }
 
+
   updateProgress('Initializing AI CV Analysis Agent...', 5);
   const startTime = Date.now();
 
+  const apiKey = config.openaiApiKey;
+
   const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: apiKey,
   });
 
   try {
@@ -198,13 +201,13 @@ export async function processCVWithAI(
       25,
     );
     updateProgress(
-      `AI Strategy Agent: Identified key focus areas: ${strategyResult.primaryFocus.join(
+      `AI Strategy Agent: Identified key focus areas: ${strategyResult?.primaryFocus?.join(
         ', ',
       )}`,
       30,
     );
     updateProgress(
-      `AI Strategy Agent: Processing priorities set: ${strategyResult.processingPriorities.join(
+      `AI Strategy Agent: Processing priorities set: ${strategyResult?.processingPriorities?.join(
         ' → ',
       )}`,
       35,
@@ -243,7 +246,7 @@ export async function processCVWithAI(
         70,
       );
       updateProgress(
-        `AI Enhancement Agent: Addressing identified challenges: ${strategyResult.potentialChallenges.join(
+        `AI Enhancement Agent: Addressing identified challenges: ${strategyResult?.potentialChallenges?.join(
           ', ',
         )}`,
         75,

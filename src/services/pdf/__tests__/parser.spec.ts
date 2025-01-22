@@ -4,7 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 import { extractTextFromPDF, parseCV } from '../parser';
-import { ParsedCV } from '../types';
+import { ParsedCV } from '../../../types/types';
 
 describe('CV Parser', () => {
   let samplePDFBuffer: Buffer;

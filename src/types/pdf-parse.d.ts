@@ -7,6 +7,6 @@ declare module 'pdf-parse' {
     version: string;
   }
 
-  function PDFParse(dataBuffer: Buffer, options?: { preserveFormattingNewlines?: boolean }): Promise<PDFData>;
+  function PDFParse(dataBuffer: Buffer, options?: any): Promise<PDFData>;
   export default PDFParse;
 } 

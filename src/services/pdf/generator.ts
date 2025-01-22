@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { ParsedCV } from '../../types/types';
-import { createElement } from 'react';
 import {
   pdf,
   Document,
@@ -9,206 +8,10 @@ import {
   View,
   StyleSheet,
 } from '@react-pdf/renderer';
+import puppeteer from 'puppeteer';
 
-export const runtime = 'nodejs';
 
-const styles = StyleSheet.create({
-  page: {
-    fontFamily: 'Helvetica',
-    lineHeight: 1.6,
-    color: '#333',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    borderBottom: '2px solid #333',
-    paddingBottom: 5,
-  },
-  heading: {
-    fontSize: 18,
-    color: '#444',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  text: {
-    fontSize: 12,
-    marginVertical: 8,
-  },
-  experienceItem: {
-    marginBottom: 15,
-  },
-  educationItem: {
-    marginBottom: 12,
-  },
-  list: {
-    paddingLeft: 20,
-    marginVertical: 10,
-  },
-  listItem: {
-    fontSize: 12,
-    marginBottom: 5,
-  },
-  strong: {
-    fontFamily: 'Helvetica-Bold',
-  },
-  recruiterDetails: {
-    marginTop: 30,
-    paddingTop: 20,
-    borderTop: '1px solid #ddd',
-    whiteSpace: 'pre-wrap',
-  },
-});
-
-export async function generatePDF(req: Request, res: Response) {
-  try {
-    const data: ParsedCV = req.body;
-
-    const MyDocument = createElement(
-      Document,
-      {},
-      createElement(
-        Page,
-        { style: styles.page },
-        // Name (h1)
-        createElement(Text, { style: styles.title }, data.firstName),
-
-        // Summary (h2 + p)
-        createElement(Text, { style: styles.heading }, 'Summary'),
-        createElement(Text, { style: styles.text }, data.objective),
-
-        // Skills
-        data.skills &&
-          Object.keys(data.skills).length > 0 &&
-          createElement(
-            View,
-            null,
-            createElement(Text, { style: styles.heading }, 'Skills'),
-            createElement(
-              View,
-              { style: styles.list },
-              ...Object.entries(data.skills).map(([category, skills]) =>
-                createElement(
-                  Text,
-                  { style: styles.listItem },
-                  createElement(
-                    Text,
-                    { style: styles.strong },
-                    `${category}: `,
-                  ),
-                  skills,
-                ),
-              ),
-            ),
-          ),
-
-        // Experience
-        data.experience &&
-          data.experience.length > 0 &&
-          createElement(
-            View,
-            null,
-            createElement(Text, { style: styles.heading }, 'Experience'),
-            ...data.experience.map((exp) =>
-              createElement(
-                View,
-                { style: styles.experienceItem },
-                createElement(
-                  Text,
-                  { style: styles.text },
-                  createElement(
-                    Text,
-                    { style: styles.strong },
-                    `${exp.position}`,
-                  ),
-                ),
-                createElement(
-                  Text,
-                  { style: styles.text },
-                  `${exp.company} | ${exp.period}`,
-                ),
-                exp.responsibilities &&
-                  createElement(
-                    View,
-                    { style: styles.list },
-                    ...exp.responsibilities.map((resp) =>
-                      createElement(
-                        Text,
-                        { style: styles.listItem },
-                        `• ${resp}`,
-                      ),
-                    ),
-                  ),
-              ),
-            ),
-          ),
-
-        // Education
-        data.education &&
-          data.education.length > 0 &&
-          createElement(
-            View,
-            null,
-            createElement(Text, { style: styles.heading }, 'Education'),
-            ...data.education.map((edu) =>
-              createElement(
-                View,
-                { style: styles.educationItem },
-                createElement(
-                  Text,
-                  { style: styles.text },
-                  createElement(
-                    Text,
-                    { style: styles.strong },
-                    `${edu.qualification}`,
-                  ),
-                ),
-                createElement(
-                  Text,
-                  { style: styles.text },
-                  `${edu.institution} - ${edu.completionDate}`,
-                ),
-              ),
-            ),
-          ),
-
-        // Recruiter Details
-        data.recruiterDetails &&
-          createElement(
-            View,
-            { style: styles.recruiterDetails },
-            createElement(Text, { style: styles.heading }, 'Recruiter Details'),
-            createElement(Text, { style: styles.text }, data.recruiterDetails),
-          ),
-      ),
-    );
-
-    const pdfDoc = await pdf(MyDocument);
-    const pdfBytes = await pdfDoc.toBlob();
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename=${
-        data.firstName || 'untitled'
-      }-cv.pdf`,
-    });
-
-    // Convert Blob to Buffer and send
-    const buffer = Buffer.from(await pdfBytes.arrayBuffer());
-    return res.send(buffer);
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    return res.status(500).json({
-      error: `Failed to generate PDF: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`,
-    });
-  }
-}
-
-function generateHTML(cv: ParsedCV): string {
+export function generateHTML(cv: ParsedCV): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -255,7 +58,7 @@ function generateHTML(cv: ParsedCV): string {
             margin: 20px 0;
           }
           .recruiter-details {
-            margin-top: 30px;
+            margin-top: 10px;
             padding-top: 20px;
             border-top: 1px solid #ddd;
             white-space: pre-wrap;
@@ -349,4 +152,31 @@ function generateHTML(cv: ParsedCV): string {
       </body>
     </html>
   `;
+}
+
+export async function generatePDFDocument(data: ParsedCV): Promise<Buffer> {
+  const html = generateHTML(data);
+  
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    const pdf = await page.pdf({
+      format: 'A4',
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' },
+      printBackground: true
+    });
+    
+    return Buffer.from(pdf);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw new Error('Failed to generate PDF');
+  } finally {
+    await browser.close();
+  }
 }

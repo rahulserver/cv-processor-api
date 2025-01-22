@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { processCV } from '../controllers/cv.controller';
-import { upload } from '../middleware/upload';
+import { upload } from '../upload';
 
 const router = Router();
 

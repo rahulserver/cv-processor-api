@@ -11,6 +11,8 @@ export const generatePDF = async (req: Request, res: Response) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating PDF:', error);
-    res.status(500).json({ error: 'Failed to generate PDF' });
+    res.status(500).json({ 
+      error: `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`
+    });
   }
 };

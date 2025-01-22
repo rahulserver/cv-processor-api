@@ -18,6 +18,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Add static file serving
+app.use(express.static('public'));
+
 // Routes
 app.use('/api/cv', cvRoutes);
 app.use('/api/pdf', pdfRoutes);
