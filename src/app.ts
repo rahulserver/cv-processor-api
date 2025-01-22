@@ -22,11 +22,11 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Routes
-app.get('/api/health', (req, res) => {
+app.get('/apis/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });
 });
-app.use('/api/cv', cvRoutes);
-app.use('/api/pdf', pdfRoutes);
+app.use('/apis/cv', cvRoutes);
+app.use('/apis/pdf', pdfRoutes);
 
 // Error handling
 app.use(errorHandler);
